@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Courses">
+<meta name="theme-color" content="#2E4A3B">
+<title>Mes courses</title>
+<!--
+  Liste de courses de Mijote, à cocher sur le téléphone.
+  La liste voyage dans le lien, après le « # » : cette partie n'est jamais envoyée au serveur,
+  rien de personnel n'est donc stocké en ligne. Les cases cochées restent sur le téléphone.
+-->
+<style>
+  :root {
+    --fond: #FBF4EA; --carte: #FFFFFF; --texte: #3A2E28; --doux: #8C7B70; --bord: #EEDFCF;
+    --accent: #E2683C; --vert: #4F9A5B; --vert-pale: #E1F1E2; --entete: #2E4A3B; --entete-texte: #FFF3E2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fond: #1E1A17; --carte: #2A2420; --texte: #F4EBDD; --doux: #A8998D; --bord: #3B332D;
+      --accent: #F08A5D; --vert: #6CBF78; --vert-pale: #24352A; --entete: #22362B; --entete-texte: #FFF3E2;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--fond); color: var(--texte);
+    font: 17px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header { position: sticky; top: 0; z-index: 2; background: var(--entete); color: var(--entete-texte);
+    padding: calc(14px + env(safe-area-inset-top)) 16px 12px; }
+  header h1 { margin: 0; font-size: 21px; }
+  header p { margin: 2px 0 8px; font-size: 14px; opacity: .8; }
+  .barre { height: 8px; background: rgba(255,255,255,.18); border-radius: 8px; overflow: hidden; }
+  .barre i { display: block; height: 100%; width: 0; background: #F2B544; transition: width .25s; }
+  main { padding: 12px 16px calc(32px + env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto; }
+  h2 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent);
+    margin: 22px 4px 8px; }
+  ul { list-style: none; margin: 0; padding: 0; background: var(--carte); border: 1px solid var(--bord);
+    border-radius: 14px; overflow: hidden; }
+  li { display: flex; gap: 12px; align-items: center; padding: 13px 14px; border-top: 1px solid var(--bord);
+    cursor: pointer; user-select: none; min-height: 52px; }
+  li:first-child { border-top: 0; }
+  .case { flex: 0 0 26px; height: 26px; border: 2px solid var(--bord); border-radius: 8px;
+    display: grid; place-items: center; color: transparent; font-weight: 700; }
+  li.ok { background: var(--vert-pale); }
+  li.ok .case { background: var(--vert); border-color: var(--vert); color: #fff; }
+  li.ok .nom { text-decoration: line-through; color: var(--doux); }
+  .nom { font-weight: 600; }
+  .det { display: block; font-size: 13px; color: var(--doux); font-weight: 400; }
+  .note { margin: 20px 4px 0; font-size: 14px; color: var(--doux); }
+  .actions { display: flex; gap: 10px; margin-top: 24px; }
+  button { flex: 1; font: inherit; font-size: 15px; font-weight: 600; padding: 12px; border-radius: 12px;
+    border: 1px solid var(--bord); background: var(--carte); color: var(--texte); }
+  .fini { text-align: center; margin: 18px 0 0; font-weight: 700; color: var(--vert); display: none; }
+  .erreur { background: var(--carte); border: 1px solid var(--bord); border-radius: 14px; padding: 18px; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="titre">Mes courses</h1>
+  <p id="avancement">Chargement...</p>
+  <div class="barre"><i id="jauge"></i></div>
+</header>
+<main id="contenu"></main>
+<script>
+(async function () {
+  const contenu = document.getElementById('contenu');
+  const erreur = (msg) => {
+    document.getElementById('avancement').textContent = '';
+    contenu.innerHTML = '';
+    const d = document.createElement('div');
+    d.className = 'erreur';
+    d.textContent = msg;
+    contenu.appendChild(d);
+  };
+
+  // Le lien : liste.html#v1.<données compressées en base64>
+  const fragment = location.hash.slice(1);
+  if (!fragment.startsWith('v1.')) {
+    erreur("Ce lien ne contient pas de liste. Ouvre-le depuis le QR code de Mijote (bouton « Envoyer sur mon iPhone »).");
+    return;
+  }
+  let liste;
+  try {
+    const b64 = fragment.slice(3).replace(/-/g, '+').replace(/_/g, '/');
+    const brut = Uint8Array.from(atob(b64 + '==='.slice((b64.length + 3) % 4)), c => c.charCodeAt(0));
+    const flux = new Blob([brut]).stream().pipeThrough(new DecompressionStream('gzip'));
+    liste = JSON.parse(await new Response(flux).text());
+  } catch (e) {
+    erreur("La liste n'a pas pu être lue. Rescanne le QR code dans Mijote (si ton iPhone est très ancien, mets-le à jour).");
+    return;
+  }
+
+  // les cases cochées restent sur le téléphone, pour cette liste-là
+  const cle = 'mijote-' + fragment.length + '-' + fragment.slice(-24);
+  let coches = {};
+  try { coches = JSON.parse(localStorage.getItem(cle) || '{}'); } catch (e) {}
+  const sauver = () => { try { localStorage.setItem(cle, JSON.stringify(coches)); } catch (e) {} };
+
+  document.getElementById('titre').textContent = liste.t || 'Mes courses';
+  document.title = liste.t || 'Mes courses';
+  contenu.innerHTML = '';
+  const lignes = [];
+  liste.g.forEach(([rayon, articles], gi) => {
+    const h = document.createElement('h2');
+    h.textContent = rayon;
+    contenu.appendChild(h);
+    const ul = document.createElement('ul');
+    articles.forEach(([nom, detail], ai) => {
+      const id = gi + '.' + ai;
+      const li = document.createElement('li');
+      const c = document.createElement('span');
+      c.className = 'case';
+      c.textContent = '✓';
+      const t = document.createElement('span');
+      t.className = 'nom';
+      t.textContent = nom;
+      if (detail) {
+        const d = document.createElement('span');
+        d.className = 'det';
+        d.textContent = detail;
+        t.appendChild(d);
+      }
+      li.append(c, t);
+      li.classList.toggle('ok', !!coches[id]);
+      li.addEventListener('click', () => {
+        coches[id] = !coches[id];
+        li.classList.toggle('ok', coches[id]);
+        sauver();
+        majAvancement();
+      });
+      ul.appendChild(li);
+      lignes.push(id);
+    });
+    contenu.appendChild(ul);
+  });
+  for (const n of (liste.n || [])) {
+    const p = document.createElement('p');
+    p.className = 'note';
+    p.textContent = n;
+    contenu.appendChild(p);
+  }
+  const fini = document.createElement('p');
+  fini.className = 'fini';
+  fini.textContent = 'Tout est dans le caddie, bravo !';
+  contenu.appendChild(fini);
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+  const tout = document.createElement('button');
+  tout.textContent = 'Tout décocher';
+  tout.addEventListener('click', () => {
+    coches = {};
+    sauver();
+    document.querySelectorAll('li.ok').forEach(li => li.classList.remove('ok'));
+    majAvancement();
+  });
+  actions.appendChild(tout);
+  contenu.appendChild(actions);
+
+  function majAvancement() {
+    const n = lignes.filter(id => coches[id]).length;
+    document.getElementById('avancement').textContent = n + ' sur ' + lignes.length + ' dans le caddie';
+    document.getElementById('jauge').style.width = (lignes.length ? 100 * n / lignes.length : 0) + '%';
+    fini.style.display = (lignes.length && n === lignes.length) ? 'block' : 'none';
+  }
+  majAvancement();
+})();
+</script>
+</body>
+</html>
