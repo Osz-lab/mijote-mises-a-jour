@@ -1,8 +1,8 @@
 {
-    "version":  "0.2.1",
-    "pck_url":  "https://github.com/Osz-lab/mijote-mises-a-jour/releases/download/v0.2.1/Mijote.pck",
-    "sha256":  "b7ff685cfdaf61bb63a925717e41ddb678ab8c79c2c5d5c001fe9d9135d538fd",
-    "size":  297536,
-    "notes":  "Corrections : lecture des photos de tickets, sauvegardes mieux protégées, affichage sur petits écrans et zoom automatique.",
+    "version":  "0.3.0",
+    "pck_url":  "https://github.com/Osz-lab/mijote-mises-a-jour/releases/download/v0.3.0/Mijote.pck",
+    "sha256":  "1405fd862c43360302d1ca5ae671e9cba4c0426eec5f8a03e36b064dca907f45",
+    "size":  323936,
+    "notes":  "Recherche de produits dans Open Food Facts : photo, marque, Nutri-Score et alerte allergies.",
     "date":  "2026-11-11"
 }
