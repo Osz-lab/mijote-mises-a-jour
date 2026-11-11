@@ -1,8 +1,8 @@
 {
-    "version":  "0.3.0",
-    "pck_url":  "https://github.com/Osz-lab/mijote-mises-a-jour/releases/download/v0.3.0/Mijote.pck",
-    "sha256":  "1405fd862c43360302d1ca5ae671e9cba4c0426eec5f8a03e36b064dca907f45",
-    "size":  323936,
-    "notes":  "Recherche de produits dans Open Food Facts : photo, marque, Nutri-Score et alerte allergies.",
+    "version":  "0.4.0",
+    "pck_url":  "https://github.com/Osz-lab/mijote-mises-a-jour/releases/download/v0.4.0/Mijote.pck",
+    "sha256":  "7a23d8baa5737206162e5853e0ffcf3b46ae9d5d15cc4dd47f11f43a22e0b6bd",
+    "size":  380040,
+    "notes":  "Mode cuisine pas à pas, restes, magasin unique, ticket qui vérifie les courses, page Mes dépenses, recettes perso, liste à cocher sur iPhone, rappels, sauvegarde à emporter.",
     "date":  "2026-11-11"
 }
